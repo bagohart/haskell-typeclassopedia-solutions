@@ -1,0 +1,47 @@
+-- Exercise block 1 (tricky) (wtf)
+-- show
+-- pure f <*> x = pure (flip ($)) <*> x <*> pure f
+-- Start from the right.
+--      pure (flip ($)) <*> x <*> pure f
+--     { Since <*> is infixl, it is equivalent to }
+-- =    (pure (flip ($)) <*> x) <*> pure f
+--  { interchange law for u = (pure (flip ($)) <*> x) and pure y = pure f
+-- =    pure ($ f) <*> (pure (flip ($)) <*> x)
+--  { composition from left to right }
+-- =    pure (.) <*> pure ($ f) <*> pure (flip ($)) <*> x
+--  { homomorphism from left to right }
+-- =    pure ((.) ($ f)) <*> pure (flip ($)) <*> x
+--  { again }
+-- =    pure ((.) ($ f) (flip ($))) <*> x
+--  { write . as infix }
+-- =    pure (($ f) . (flip ($))) <*> x
+--  { magic }
+--  =   pure f <*> x
+--  as for the magic:
+--      ($ f) . (flip ($)) $ a
+--  =   ($ f) (((\f -> \x -> \y -> f y x) ($)) a)
+--  =   ($ f) ((\x -> \y -> ($) y x) a)
+--  =   ($ f) ((\x -> \y -> y x) a)
+--  =   ($ f) (\y -> y a)
+--  =   (\z -> z $ f) (\y -> y a)
+--  =   (\y -> y a) $ f
+--  =   (\y -> y a) f
+--  =   f a
+--  or without the a:
+--  Note that
+--  (.) = \g -> \h -> \a -> g (h a)
+--  So:
+--      ($ f) . (flip ($))
+--  =   (.) ($ f) (flip ($))
+--  =   (\g -> \h -> \a -> g (h a)) ($ f) (flip ($))
+--  =   \a -> ($ f) (flip ($) a)
+--  =   \a -> (\z -> z $ f) (flip ($) a)
+--  =   \a -> (flip ($) a) $ f
+--  =   \a -> (\y -> ($) y a) $ f
+--  =   \a -> (\y -> y a) f
+--  =   \a -> f a
+--
+--  flip is:
+--  flip f = \x -> \y -> f y x
+--  or:
+--  flip = \f -> \x -> \y -> f y x
