@@ -1,3 +1,5 @@
+{-# LANGUAGE InstanceSigs #-}
+
 -- Exercise block 1 (tricky) (wtf)
 -- show
 -- pure f <*> x = pure (flip ($)) <*> x <*> pure f
@@ -45,3 +47,38 @@
 --  flip f = \x -> \y -> f y x
 --  or:
 --  flip = \f -> \x -> \y -> f y x
+
+newtype ZipList' a = ZipList' { getZipList' :: [a] }
+
+instance Functor ZipList' where 
+    fmap g (ZipList' xs) = ZipList' $ fmap g xs
+    (<$) a (ZipList' xs) = ZipList' $ fmap (const a) xs
+
+instance Applicative ZipList' where 
+    pure :: a -> ZipList' a
+    pure = ZipList' . repeat
+
+    (<*>) :: ZipList' (a -> b) -> ZipList' a -> ZipList' b
+    (<*>) (ZipList' gs) (ZipList' xs) = ZipList' (zipWith ($) gs xs)
+
+data Maybe' a = Just' a | Nothing' deriving (Eq, Show)
+
+instance Functor Maybe' where 
+    fmap g (Just' x) = Just' $ g x
+    fmap _ Nothing' = Nothing'
+    (<$) a (Just' b) = Just' a
+    (<$) a Nothing' = Nothing' -- because (a <$) = fmap (const a)
+
+instance Applicative Maybe' where 
+    pure = Just'
+    (<*>) Nothing' _ = Nothing'
+    (<*>) _ Nothing' = Nothing'
+    (<*>) (Just' gab) (Just' a) = Just' $ gab a
+    (<*) Nothing' _ = Nothing'
+    (<*) _ Nothing' = Nothing'
+    (<*) (Just' a) (Just' b) = Just' a
+    (*>) Nothing' _ = Nothing'
+    (*>) _ Nothing' = Nothing'
+    (*>) (Just' a) (Just' b) = Just' b
+
+-- continue: utility functions for Applicative
