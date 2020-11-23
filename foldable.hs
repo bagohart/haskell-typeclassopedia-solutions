@@ -1,6 +1,6 @@
 import Data.Foldable
 import Data.Monoid
-import Data.Semigroup
+-- import Data.Semigroup
 
 -- class Foldable (t :: * -> *) where 
 -- fold :: Monoid m => t m => m
@@ -84,3 +84,17 @@ notElem1 x = not . elem1 x
 
 find1 :: Foldable t => (a -> Bool) -> t a -> Maybe a
 find1 p = Data.Monoid.getFirst . foldMap (\x -> if p x then Data.Monoid.First (Just x) else Data.Monoid.First (Nothing))
+
+-- utility functions
+a1 = asum [Nothing, Just 1, Just 2]
+sa = sequenceA_ [putStrLn "lol">>return "hm", putStrLn "aha">>return "lol", return "thisisthrownaway"]
+tr = traverse_ putStrLn ["lol","aha","hhhhmmmmmm"]
+fooor = for_ [1,2,3,4,8] print
+
+-- last exercise block
+traverse_1 :: (Foldable t, Applicative f, Functor t) => (a -> f b) -> t a -> f ()
+traverse_1 f = sequenceA_ . fmap f
+-- the extra constraint is the "Functor t"
+
+sequenceA_1 :: (Foldable t, Applicative f) => t (f a) -> f ()
+sequenceA_1 = traverse_ id
