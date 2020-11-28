@@ -4,6 +4,9 @@ import Control.Category
 import Control.Monad
 import Data.Monoid
 
+-- this magic thing generalizes function composition to something... more general. lol.
+-- this way, I can compose things which are more than functions. or something.
+
 -- class Category arr where 
 --  id :: a `arr` a
 --  (.) :: (b `arr` c) -> (a `arr` b) -> (a `arr` c)
