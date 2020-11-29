@@ -126,3 +126,26 @@ swap (x,y) = (y,x)
 
 forkMe :: a -> (a,a)
 forkMe x = (x,x)
+
+-- What happens if I combine a function with a monoid?
+data MonoFunc m a b = MonoFunc { getMono::m
+                               , getFunc :: (a -> b)
+                               }
+
+instance (Show m) => Show (MonoFunc m a b) where 
+    show (MonoFunc m f) = "(" ++ show m ++ ", f)"
+
+instance (Monoid m) => Category (MonoFunc m) where 
+    id :: MonoFunc m a a
+    id = MonoFunc mempty (\a -> a)
+
+    (.) :: MonoFunc m b c -> MonoFunc m a b -> MonoFunc m a c
+    (.) (MonoFunc m g) (MonoFunc n h) = MonoFunc (m <> n) (g Prelude.. h)
+    -- id really should be neutral, since the mempty is neutral and (\a -> a) is very neutral, too.
+    -- (.) should be associative, since . and <> are both associative.
+
+instance (Monoid m) => Arrow (MonoFunc m) where 
+    arr :: (b -> c) -> MonoFunc m b c
+    arr g = MonoFunc mempty g
+    first :: MonoFunc m b c -> MonoFunc m (b,d) (c,d)
+    first (MonoFunc m g) = MonoFunc m $ \(b,d) -> (g b,d)
