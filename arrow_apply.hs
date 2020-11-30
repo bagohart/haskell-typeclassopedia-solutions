@@ -81,3 +81,48 @@ instance ArrowApply a => Monad (ArrowMonad' a) where
 
 runArrowMonad' :: ArrowMonad' a b -> a () b
 runArrowMonad' (ArrowMonad' a) = a
+
+-- so, this is basically the Kleisli thing with the Maybe monad,
+-- but let's see how this looks if implemented from scratch
+data Option a = None | Some a deriving (Eq,Show)
+
+newtype OptionFunc b c = OptionFunc (b -> Option c)
+
+instance Category OptionFunc where 
+    id :: OptionFunc a a
+    id = OptionFunc Some
+
+    (.) :: (OptionFunc b c) -> (OptionFunc a b) -> (OptionFunc a c)
+    (.) (OptionFunc g) (OptionFunc h) = OptionFunc $ \a -> op (h a)
+        where op None = None
+              op (Some x) = g x
+
+instance Arrow OptionFunc where 
+    arr :: (b -> c) -> OptionFunc b c
+    arr g = OptionFunc $ Some Prelude.. g
+
+    first :: OptionFunc b c -> OptionFunc (b,d) (c,d)
+    first (OptionFunc g) = OptionFunc $ \(b,d) -> op (g b) d
+        where op None _ = None
+              op (Some x) d = Some (x,d)
+
+instance ArrowChoice OptionFunc where 
+    left :: OptionFunc b c -> OptionFunc (Either b d) (Either c d)
+    left (OptionFunc g) = OptionFunc $ \ebd -> op ebd
+        where op (Right d) = Some $ Right d
+              op (Left b) = lol $ g b
+              lol None = None -- Functor reimplementation :)
+              lol (Some x) = Some $ Left x
+
+    (+++) :: OptionFunc b c -> OptionFunc b' c' -> OptionFunc (Either b b') (Either c c')
+    (+++) (OptionFunc g) (OptionFunc h) = OptionFunc $ \ebb -> op ebb
+        where op (Left x) = lol (g x)
+              op (Right x) = lol' (h x)
+              lol None = None -- ... this is getting a bit stupid
+              lol (Some x) = Some $ Left x
+              lol' None = None
+              lol' (Some x) = Some $ Right x
+
+instance ArrowApply OptionFunc where 
+    app :: OptionFunc (OptionFunc b c, b) c
+    app = OptionFunc $ \((OptionFunc g),b) -> g b
